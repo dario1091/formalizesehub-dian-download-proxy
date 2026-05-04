@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
-import { requireAuth, optionsResponse } from '../../../formalizesehub-auth/shared/auth-middleware/src/index';
+import { requireAuth, optionsResponse } from '../../formalizesehub-auth/shared/auth-middleware/src/index';
 
 const sqs = new SQSClient({});
 const QUEUE_URL = process.env.SQS_DIAN_PROCESSING_URL!;
