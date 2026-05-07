@@ -21,8 +21,7 @@ async function build() {
     platform: 'node',
     target: 'node20',
     outfile: resolve(__dirname, 'dist/index.js'),
-    external: ['@aws-sdk/*', 'jsonwebtoken'],
-    nodePaths: [resolve(__dirname, '../formalizesehub-auth/node_modules')],
+    external: ['@aws-sdk/*'],
     sourcemap: true,
     format: 'cjs',
   });
