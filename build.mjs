@@ -14,6 +14,16 @@ async function build() {
   await rm(resolve(__dirname, 'dist.zip'), { force: true });
   await mkdir(resolve(__dirname, 'dist'), { recursive: true });
 
+  // Plugin para resolver imports cross-repo del auth-middleware
+  const resolveAuthMiddleware = {
+    name: 'resolve-auth-middleware',
+    setup(build) {
+      build.onResolve({ filter: /formalizesehub-auth\/shared\/auth-middleware/ }, () => ({
+        path: resolve(__dirname, '../formalizesehub-auth/shared/auth-middleware/src/index.ts'),
+      }));
+    },
+  };
+
   await esbuild.build({
     entryPoints: [resolve(__dirname, 'src/index.ts')],
     bundle: true,
@@ -24,6 +34,7 @@ async function build() {
     external: ['@aws-sdk/*'],
     sourcemap: true,
     format: 'cjs',
+    plugins: [resolveAuthMiddleware],
   });
   console.log('✅ Build completed');
 
