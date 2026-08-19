@@ -43,6 +43,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       headers,
       body: JSON.stringify({ message: 'Descarga iniciada. Recibirás una notificación cuando esté lista.', sessionId }),
     };
+
   } catch (error: any) {
     console.error('Error:', error);
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'Error interno al iniciar descarga' }) };

@@ -1,0 +1,70 @@
+name: Deploy Lambdas
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout auth-middleware (shared dependency)
+        run: |
+          git clone --depth 1 --branch develop https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/formalizese-hub/formalizesehub-auth.git ../formalizesehub-auth
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+            echo "region=us-east-2" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+            echo "region=sa-east-1" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure AWS credentials (dev)
+        if: steps.env.outputs.environment == 'dev'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ steps.env.outputs.region }}
+
+      - name: Configure AWS credentials (prod)
+        if: steps.env.outputs.environment == 'prod'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ steps.env.outputs.region }}
+          role-to-assume: ${{ secrets.PROD_ROLE_ARN }}
+          role-duration-seconds: 3600
+          role-skip-session-tagging: true
+
+      - name: Deploy dian-download-proxy
+        run: aws lambda update-function-code --function-name formalizese-dian-download-proxy-${{ steps.env.outputs.environment }} --zip-file fileb://dist.zip > /dev/null
